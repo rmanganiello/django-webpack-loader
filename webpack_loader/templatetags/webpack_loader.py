@@ -19,7 +19,7 @@ def render_bundle(
         attrs='', is_preload=False, skip_common_chunks=False):
     tags = utils.get_as_tags(
         bundle_name, extension=extension, config=config, suffix=suffix,
-        attrs=attrs, is_preload=is_preload)
+        attrs=attrs, is_preload=is_preload, context=context)
     request = context.get('request')
     if request is None:
         if skip_common_chunks:
@@ -34,13 +34,13 @@ def render_bundle(
     return mark_safe('\n'.join(tags))
 
 
-@register.simple_tag
-def webpack_static(asset_name, config='DEFAULT'):
-    return utils.get_static(asset_name, config=config)
+@register.simple_tag(takes_context=True)
+def webpack_static(context, asset_name, config='DEFAULT'):
+    return utils.get_static(asset_name, config=config, context=context)
 
 
-@register.simple_tag
-def get_files(bundle_name, extension=None, config='DEFAULT'):
+@register.simple_tag(takes_context=True)
+def get_files(context, bundle_name, extension=None, config='DEFAULT'):
     """
     Returns all chunks in the given bundle.
     Example usage::
@@ -53,4 +53,4 @@ def get_files(bundle_name, extension=None, config='DEFAULT'):
     :param config: (optional) the name of the configuration
     :return: a list of matching chunks
     """
-    return utils.get_files(bundle_name, extension=extension, config=config)
+    return utils.get_files(bundle_name, extension=extension, config=config, context=context)

@@ -21,7 +21,7 @@ class WebpackLoader(object):
         self.name = name
         self.config = config
 
-    def load_assets(self):
+    def load_assets(self, context=None):
         try:
             with open(self.config['STATS_FILE'], encoding="utf-8") as f:
                 return json.load(f)
@@ -31,14 +31,14 @@ class WebpackLoader(object):
                 'the file and the path is correct?'.format(
                     self.config['STATS_FILE']))
 
-    def get_assets(self):
+    def get_assets(self, context=None):
         if self.config['CACHE']:
             if self.name not in self._assets:
-                self._assets[self.name] = self.load_assets()
+                self._assets[self.name] = self.load_assets(context)
             return self._assets[self.name]
-        return self.load_assets()
+        return self.load_assets(context)
 
-    def filter_chunks(self, chunks):
+    def filter_chunks(self, chunks, context=None):
         filtered_chunks = []
 
         for chunk in chunks:
@@ -49,15 +49,15 @@ class WebpackLoader(object):
 
         return filtered_chunks
 
-    def map_chunk_files_to_url(self, chunks):
-        assets = self.get_assets()
+    def map_chunk_files_to_url(self, chunks, context=None):
+        assets = self.get_assets(context)
         files = assets['assets']
 
         for chunk in chunks:
-            url = self.get_chunk_url(files[chunk])
-            yield { 'name': chunk, 'url': url }
+            url = self.get_chunk_url(files[chunk], context)
+            yield {'name': chunk, 'url': url}
 
-    def get_chunk_url(self, chunk_file):
+    def get_chunk_url(self, chunk_file, context=None):
         public_path = chunk_file.get('publicPath')
         if public_path:
             return public_path
@@ -68,10 +68,10 @@ class WebpackLoader(object):
         )
         return staticfiles_storage.url(relpath)
 
-    def get_bundle(self, bundle_name):
-        assets = self.get_assets()
+    def get_bundle(self, bundle_name, context=None):
+        assets = self.get_assets(context)
 
-        # poll when debugging and block request until bundle is compiled
+        # poll when debugging and block context until bundle is compiled
         # or the build times out
         if settings.DEBUG:
             timeout = self.config['TIMEOUT'] or 0
@@ -94,14 +94,14 @@ class WebpackLoader(object):
             if chunks is None:
                 raise WebpackBundleLookupError('Cannot resolve bundle {0}.'.format(bundle_name))
 
-            filtered_chunks = self.filter_chunks(chunks)
+            filtered_chunks = self.filter_chunks(chunks, context)
 
             for chunk in filtered_chunks:
                 asset = assets['assets'][chunk]
                 if asset is None:
                     raise WebpackBundleLookupError('Cannot resolve asset {0}.'.format(chunk))
 
-            return self.map_chunk_files_to_url(filtered_chunks)
+            return self.map_chunk_files_to_url(filtered_chunks, context)
 
         elif assets.get('status') == 'error':
             if 'file' not in assets:

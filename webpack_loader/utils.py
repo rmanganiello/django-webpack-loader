@@ -35,19 +35,19 @@ def _filter_by_extension(bundle, extension):
             yield chunk
 
 
-def _get_bundle(bundle_name, extension, config):
-    bundle = get_loader(config).get_bundle(bundle_name)
+def _get_bundle(bundle_name, extension, config, context=None):
+    bundle = get_loader(config).get_bundle(bundle_name, context)
     if extension:
         bundle = _filter_by_extension(bundle, extension)
     return bundle
 
 
-def get_files(bundle_name, extension=None, config='DEFAULT'):
+def get_files(bundle_name, extension=None, config='DEFAULT', context=None):
     '''Returns list of chunks from named bundle'''
-    return list(_get_bundle(bundle_name, extension, config))
+    return list(_get_bundle(bundle_name, extension, config, context))
 
 
-def get_as_tags(bundle_name, extension=None, config='DEFAULT', suffix='', attrs='', is_preload=False):
+def get_as_tags(bundle_name, extension=None, config='DEFAULT', suffix='', attrs='', is_preload=False, context=None):
     '''
     Get a list of formatted <script> & <link> tags for the assets in the
     named bundle.
@@ -58,7 +58,7 @@ def get_as_tags(bundle_name, extension=None, config='DEFAULT', suffix='', attrs=
     :return: a list of formatted tags as strings
     '''
 
-    bundle = _get_bundle(bundle_name, extension, config)
+    bundle = _get_bundle(bundle_name, extension, config, context)
     tags = []
     for chunk in bundle:
         if chunk['name'].endswith(('.js', '.js.gz')):
@@ -77,7 +77,7 @@ def get_as_tags(bundle_name, extension=None, config='DEFAULT', suffix='', attrs=
     return tags
 
 
-def get_static(asset_name, config='DEFAULT'):
+def get_static(asset_name, config='DEFAULT', context=None):
     '''
     Equivalent to Django's 'static' look up but for webpack assets.
 
@@ -86,7 +86,7 @@ def get_static(asset_name, config='DEFAULT'):
     :return: path to webpack asset as a string
     '''
     return "{0}{1}".format(
-        get_loader(config).get_assets().get(
+        get_loader(config).get_assets(context).get(
             'publicPath', getattr(settings, 'STATIC_URL')
         ),
         asset_name
